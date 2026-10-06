@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexiForge PDF Studio | Multi-Image to PDF Converter</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Convert multiple images to a single PDF instantly with NexiForge PDF Studio. Fast, free, responsive, and 100% secure client-side PDF converter tool.">
+    <meta name="keywords" content="image to pdf, jpg to pdf converter, merge photos to pdf, free pdf maker, nexiforge pdf studio">
+    <meta name="author" content="NexiForge Media Studio">
+    <meta name="robots" content="index, follow">
+
+    <!-- jsPDF Library for Browser-Side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary-glow: #ec4899;
+            --secondary-glow: #8b5cf6;
+            --cyan-glow: #06b6d4;
+            --bg-dark: #030712;
+            --glass-bg: rgba(17, 24, 39, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --accent-green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            overflow-x: hidden;
+            color: #f8fafc;
+        }
+
+        .background-3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 20%, rgba(236, 72, 153, 0.22) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.22) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.15) 0%, transparent 60%);
+            filter: blur(40px);
+            animation: pulse3d 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse3d {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(3deg); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.5);
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffffff 30%, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #f472b6;
+            margin-top: 8px;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .container-3d {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 22px 18px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            text-align: center;
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(236, 72, 153, 0.5);
+            border-radius: 18px;
+            padding: 22px 15px;
+            background: rgba(3, 7, 18, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 140px;
+        }
+
+        .upload-icon-wrapper {
+            width: 52px;
+            height: 52px;
+            background: rgba(236, 72, 153, 0.15);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f472b6;
+        }
+
+        .drop-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .drop-subtitle {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .gallery-container {
+            display: none;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .gallery-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .gallery-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .thumb-box {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: 90px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Number Badge */
+        .img-num-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #f472b6;
+            border: 1px solid rgba(244, 114, 182, 0.4);
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        /* Delete / Cross Icon Button */
+        .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.15);
+            background: #ef4444;
+        }
+
+        .controls {
+            display: none;
+            margin-top: 18px;
+            text-align: left;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 600;
+        }
+
+        .select-input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 10px;
+            outline: none;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .select-input option {
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .btn-action {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(236, 72, 153, 0.6);
+        }
+
+        .result-box {
+            display: none;
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid var(--accent-green);
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .stats-text {
+            font-size: 13px;
+            color: #34d399;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .btn-download {
+            background: var(--accent-green);
+            color: white;
+            padding: 11px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-block;
+            font-size: 13px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            cursor: pointer;
+            border: none;
+        }
+
+        @media (min-width: 480px) {
+            h1 { font-size: 34px; }
+            .container-3d { padding: 28px 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-3d"></div>
+
+    <header>
+        <span class="brand-badge">NexiForge Media Studio</span>
+        <h1>Pro PDF Converter Studio</h1>
+        <div class="subtitle-badge">
+            <span>⚡</span> Convert Images to PDF Instantly
+        </div>
+    </header>
+
+    <div class="container-3d">
+        <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <div id="uploadUi" style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div class="upload-icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="drop-title" id="dropTitle">Select Photos (Single or Multiple)</div>
+                <div class="drop-subtitle">Supports JPG, JPEG, PNG</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" multiple onchange="handleImageSelect(event)">
+        </div>
+
+        <div class="gallery-container" id="galleryContainer">
+            <div class="gallery-header" id="galleryHeader">Uploaded Photos (0)</div>
+            <div class="gallery-preview" id="galleryPreview"></div>
+        </div>
+
+        <div class="controls" id="controlsSection">
+            <div class="setting-group">
+                <label class="setting-label">Page Orientation Option</label>
+                <select id="orientationSelect" class="select-input">
+                    <option value="auto">Auto (Fits Photo Size Automatically)</option>
+                    <option value="p">Portrait (Vertical Page Layout)</option>
+                    <option value="l">Landscape (Horizontal Page Layout)</option>
+                </select>
+            </div>
+
+            <button class="btn-action" onclick="convertToPDF()">Convert All Images to PDF</button>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <div class="stats-text" id="statsText">Done! PDF Generated Successfully.</div>
+            <button class="btn-download" id="downloadPdfBtn">Download Document PDF</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedImagesList = [];
+
+        function handleImageSelect(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        selectedImagesList.push({
+                            src: e.target.result,
+                            width: img.width,
+                            height: img.height
+                        });
+                        renderGallery();
+                    }
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeSingleImage(index) {
+            selectedImagesList.splice(index, 1);
+            if (selectedImagesList.length === 0) {
+                resetTool();
+            } else {
+                renderGallery();
+            }
+        }
+
+        function renderGallery() {
+            const gallery = document.getElementById('galleryPreview');
+            const galleryContainer = document.getElementById('galleryContainer');
+            gallery.innerHTML = '';
+            
+            if (selectedImagesList.length > 0) {
+                galleryContainer.style.display = 'block';
+                document.getElementById('controlsSection').style.display = 'block';
+                document.getElementById('dropTitle').innerText = `Add More Photos`;
+                document.getElementById('galleryHeader').innerText = `Uploaded Photos (${selectedImagesList.length})`;
+            }
+
+            selectedImagesList.forEach((item, index) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'thumb-box';
+                thumb.innerHTML = `
+                    <span class="img-num-badge">#${index + 1}</span>
+                    <img src="${item.src}" alt="Preview">
+                    <button class="remove-btn" onclick="event.stopPropagation(); removeSingleImage(${index})">✕</button>
+                `;
+                gallery.appendChild(thumb);
+            });
+        }
+
+        function convertToPDF() {
+            if (!selectedImagesList.length) return;
+
+            const { jsPDF } = window.jspdf;
+            const userOrientation = document.getElementById('orientationSelect').value;
+            let pdf = null;
+
+            selectedImagesList.forEach((imgObj, index) => {
+                let orientation = userOrientation;
+                if (userOrientation === 'auto') {
+                    orientation = imgObj.width > imgObj.height ? 'l' : 'p';
+                }
+
+                if (index === 0) {
+                    pdf = new jsPDF(orientation, 'px', [imgObj.width, imgObj.height]);
+                } else {
+                    pdf.addPage([imgObj.width, imgObj.height], orientation);
+                }
+
+                pdf.addImage(imgObj.src, 'JPEG', 0, 0, imgObj.width, imgObj.height);
+            });
+
+            const pdfBlob = pdf.output('blob');
+            const blobUrl = URL.createObjectURL(pdfBlob);
+
+            const downloadBtn = document.getElementById('downloadPdfBtn');
+            downloadBtn.onclick = function() {
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = 'nexiforge-document.pdf';
+                a.click();
+            };
+
+            document.getElementById('resultBox').style.display = 'block';
+        }
+
+        function resetTool() {
+            selectedImagesList = [];
+            document.getElementById('fileInput').value = '';
+            document.getElementById('galleryPreview').innerHTML = '';
+            document.getElementById('galleryContainer').style.display = 'none';
+            document.getElementById('controlsSection').style.display = 'none';
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('dropTitle').innerText = 'Select Photos (Single or Multiple)';
+        }
+    </script>
+</body>
+</html>
